@@ -1,0 +1,318 @@
+---
+title: "<br><small> Rocker: **explanation** and `motivation` for Docker containers usage in applications development </small>"
+subtitle: "<small> <br>[Marcin Kosiński](http://r-addict.com/About.html) </small>"
+author: "<small><a href='https://r-addict.com'><i class='fa fa-comment'></i></a>&nbsp;&nbsp;<a href='https://stackoverflow.com/users/3857701'><i class='fa fa-stack-overflow'></i></a>&nbsp;&nbsp;<a href='https://github.com/MarcinKosinski'><i class='fa fa-github'></i></a>&nbsp;&nbsp;<a href='mailto:m.p.kosinski@gmail.com'><i class='fa fa-envelope-o'></i></a></small><br>"
+date: September 30, 2016
+output:
+  revealjs::revealjs_presentation:
+    theme: black
+    highlight: pygments
+    self_contained: false
+    center: true
+    reveal_options:
+      slideNumber: true
+      previewLinks: true
+---
+
+```{r, include=FALSE}
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+library(knitr)
+opts_chunk$set(
+	comment = "",
+	fig.width = 12, 
+	message = FALSE,
+	warning = FALSE,
+	tidy.opts = list(
+		keep.blank.line = TRUE,	
+		width.cutoff = 150
+		),
+	options(width = 200),
+	eval = TRUE
+)
+Sys.setenv(JAVA_HOME='/usr/lib/jvm/java-7-openjdk-amd64')
+```
+
+# What can be called an <br> (R) application?
+
+## What can be called an <br> (R) application?
+
+> An application program is a computer program designed to perform a group of coordinated functions, tasks, or activities for the benefit of the user.
+
+a spreadsheet, a web browser, a media player...
+
+or an R executable code!
+```{r, eval=FALSE}
+source('01_read_data.R')
+source('02_data_everything.R')
+source('03_send_data.R')
+```
+
+# What is the development speed of main <br> R packages? 
+
+## Speed of R development? 
+
+![Thanks](https://raw.githubusercontent.com/MarcinKosinski/eRka10/master/img/speed2.png)
+
+Source: [Why should you backup your R objects?](https://www.r-bloggers.com/why-should-you-backup-your-r-objects/)  by [pbiecek](http://github.com/pbiecek/)
+
+
+## Speed of R development? 
+
+![Thanks](https://raw.githubusercontent.com/MarcinKosinski/eRka10/master/img/speed1.png)
+
+Source: [Why should you backup your R objects?](https://www.r-bloggers.com/why-should-you-backup-your-r-objects/)  by [pbiecek](http://github.com/pbiecek/)
+
+
+# Problems of using <br> (R) applications?
+
+## Problems of using <br> (R) applications?
+<small>
+Are used in various environments on different platforms (development/production). <br> Each might have different
+
+* base version of R 
+* versions of R packages
+* versions of dependent software (java/spark)
+* global system variables
+
+**or lack of them**
+</small>
+```{r}
+data.frame(
+  value = Sys.getenv(
+    c('JAVA_HOME', 'LANG', 'HADOOP_CONF_DIR')))
+```
+
+## Problems of using <br> (R) applications?
+<small>
+[<i class='fa fa-stack-overflow'></i> pandoc version 1.12.3 or higher is required and was not found (R shiny)](http://stackoverflow.com/questions/28432607/pandoc-version-1-12-3-or-higher-is-required-and-was-not-found-r-shiny)
+</small>
+```{r}
+# pandoc version 1.12.3 or higher is required and was not found.
+```
+
+[rocker/shiny](https://hub.docker.com/r/rocker/shiny/)
+
+```{r, eval = FALSE}
+Sys.setenv(RSTUDIO_PANDOC="/opt/shiny-server/ext/pandoc")
+```
+
+```{r}
+Sys.getenv('RSTUDIO_PANDOC')
+```
+
+<small>
+[<i class='fa fa-github'></i> rmarkdown::render freezes because pandoc freezes when LC_ALL and LANG are unset](https://github.com/rocker-org/shiny/issues/17)
+</small>
+
+
+## Problems of using <br> (R) applications?
+
+Code example - [<i class='fa fa-stack-overflow'></i> Can't gather tibble in R](http://stackoverflow.com/questions/39231807/cant-gather-tibble-in-r)
+
+
+```{r, eval=FALSE}
+library(tidyr) # dplyr 0.4.2
+iris %>%
+  select(-Sepal.Width) %>%
+  gather(Species) %>% head
+  Species      Species value
+1  setosa Sepal.Length   5.1
+2  setosa Sepal.Length   4.9
+3  setosa Sepal.Length   4.7
+4  setosa Sepal.Length   4.6
+5  setosa Sepal.Length   5.0
+6  setosa Sepal.Length   5.4
+```
+
+```{r, eval=FALSE}
+library(tidyr) # dplyr 0.4.3
+Error: Each variable must have a unique name.
+Problem variables: 'Species'
+```
+
+## Problems of using <br> (R) applications?
+
+Object example
+
+<small>created in one version of ggplot can't be printed in another.</small>
+
+```{r, eval=FALSE}
+library(ggplot2)
+library(archivist)
+archivist::aread('pbiecek/archivist/scripts/packDev/923ec99f79cce099408d4973471dd30d')
+```
+
+
+```{r, eval=FALSE}
+Error in FUN(X[[i]], ...) : attempt to apply non-function
+5. FUN(X[[i]], ...)
+4. lapply(layers, function(y) y$layer_data(plot$data))
+3. ggplot_build(x)
+2. print.ggplot(x)
+1. function (x, ...) UseMethod("print")(x)
+```
+
+<small>
+[<i class='fa fa-github'></i> Small solution is to restore libraries from session in which the object was created.](https://github.com/pbiecek/archivist/blob/master/R/restoreLibraries.R)
+</small>
+
+## Problems of using <br> (R) applications?
+
+Dependent software example
+
+<small>
+[<i class='fa fa-stack-overflow'></i> Can't install git2r nor devtools R packages on centOS 7.0 64 bit](http://stackoverflow.com/questions/30394563/cant-install-git2r-nor-devtools-r-packages-on-centos-7-0-64-bit)
+</small>
+
+```{bash, eval=FALSE}
+configure: error: OpenSSL library required
+See `config.log' for more details
+ERROR: configuration failed for package ‘git2r’
+* removing ‘/usr/lib64/R/library/git2r’
+ERROR: dependency ‘git2r’ is not available for package ‘devtools’
+* removing ‘/usr/lib64/R/library/devtools’
+```
+
+Lack of OpenSSL
+
+```{bash, eval=FALSE}
+yum install openssl-devel
+```
+
+
+
+# Docker
+
+## What is Docker?
+
+Package your application into a standardized unit for software development
+
+> Docker containers wrap a piece of software in a complete filesystem that contains everything needed to run: code, runtime, system tools, system libraries – anything that can be installed on a server. This guarantees that the software will always run the same, regardless of its environment.
+
+
+## Docker's architecture
+
+![Thanks](https://raw.githubusercontent.com/MarcinKosinski/eRka10/master/img/docker2.svg)
+
+Source: [What is Docker’s architecture?](https://docs.docker.com/engine/understanding-docker/#/what-is-docker-s-architecture)
+
+## Basic commands
+
+```{bash, eval=FALSE}
+docker build -t tag path # build locally
+docker push -t # to Docker registry
+docker pull -t
+docker run -it / -d # run Docker
+docker images # show downloaded Dockers
+docker ps # show running Dockers
+docker rmi # remove Docker
+```
+
+
+# What might be Rocker?
+
+## Using (useful) Rockers/Dockers
+
+<small>
+Because using is simple than creating.
+</small>
+
+[Docker containers for Bioconductor](https://www.bioconductor.org/help/docker/)
+
+```{bash, eval=FALSE}
+docker run -ti bioconductor/devel_base R
+```
+
+[Rocker - R configurations for Docker](https://hub.docker.com/u/rocker/)
+
+```{bash, eval=FALSE}
+docker run -d -p 8787:8787 rocker/rstudio
+```
+
+```{bash, eval=FALSE}
+docker run -d -p 80:3838 \
+    -v /srv/shinyapps/:/srv/shiny-server/ \
+    -v /srv/shinylog/:/var/log/ \
+    rocker/shiny
+```
+
+
+## Creating Dockers/Rockers
+
+[rocker/hadleyverse/Dockerfile](https://hub.docker.com/r/rocker/hadleyverse/~/dockerfile/)
+
+rocker/rstudio
+
+```{bash, eval=FALSE}
+## Start with the official rocker image providing 'base R' 
+FROM r-base:latest
+...
+```
+
+rocker/r-base
+
+```{bash, eval=FALSE}
+FROM debian:testing
+```
+
+
+## Bigger example 
+
+<small>[CzasDojazdu](http://mi2.mini.pw.edu.pl:3838/CzasDojazdu/en/) - [Dockerfile](https://github.com/mi2-warsaw/CzasDojazdu/blob/master/Dockerfile)</small>
+```{bash, eval=FALSE}
+FROM rocker/hadleyverse:latest 
+MAINTAINER Marcin Kosiński "m.p.kosinski@gmail.com"
+RUN R -e "install.packages('shinydashboard', 
+                repos='https://cran.rstudio.com/')"
+...
+RUN mkdir -p app/Rscripts app/dane app/dicts
+
+ADD Rscripts /app/Rscripts
+ADD dane /app/dane
+ADD dicts /app/dicts
+ADD 000_runme.R /app/
+
+VOLUME /srv/shiny-server/CzasDojazdu/
+WORKDIR /app
+CMD R -f /app/000_runme.R
+```
+
+
+## Overall benefits
+
+![Thanks](https://raw.githubusercontent.com/MarcinKosinski/eRka10/master/img/docker1.jpg)
+
+
+
+# [Get started with Docker](https://www.docker.com/products/docker#/linux)
+
+## [Get started with Docker](https://www.docker.com/products/docker#/linux)
+
+![Thanks](https://raw.githubusercontent.com/MarcinKosinski/eRka10/master/img/thanks.png)
+
+More on R bloggers: [R 3.3.0 is another motivation for Docker](https://www.r-bloggers.com/r-3-3-0-is-another-motivation-for-docker/)
+
+## Potential question - Docker vs Virtual Machine
+
+<small>
+[<i class='fa fa-stack-overflow'></i> How is Docker different from a normal virtual machine?](http://stackoverflow.com/questions/16047306/how-is-docker-different-from-a-normal-virtual-machine)
+</small>
+
+<small>
+[<i class='fa fa-comment'></i> So, when do you use a Container or VM?](https://blog.docker.com/2016/05/vm-or-containers/)
+</small>
+
+<small>
+[<i class='fa fa-comment'></i> Docker vs VMs](https://devops.com/2014/11/24/docker-vs-vms/)
+</small>
+
+
+## Potential question - Docker on Windows
+
+<small>
+[<i class='fa fa-comment'></i> Docker for Windows](https://docs.docker.com/engine/installation/windows/)
+</small>
+
+<small>
+[<i class='fa fa-comment'></i> Getting Started with Docker for Windows](https://docs.docker.com/docker-for-windows/)
+</small>
