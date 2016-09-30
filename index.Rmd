@@ -192,7 +192,7 @@ Package your application into a standardized unit for software development
 
 ## Docker's architecture
 
-![Thanks](https://raw.githubusercontent.com/MarcinKosinski/eRka10/master/img/docker2.svg)
+![Thanks](https://raw.githubusercontent.com/MarcinKosinski/eRka10/master/img/docker2.png)
 
 Source: [What is Docker’s architecture?](https://docs.docker.com/engine/understanding-docker/#/what-is-docker-s-architecture)
 
